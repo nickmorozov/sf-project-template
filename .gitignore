@@ -22,3 +22,4 @@ Thumbs.db
 
 # Husky internals (hooks themselves are committed)
 .husky/_/
+.idea/
