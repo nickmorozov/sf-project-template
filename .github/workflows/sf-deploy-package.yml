@@ -1,0 +1,192 @@
+# Reusable workflow: 2GP package-deploy to a single org.
+# Authenticates DevHub + target org, bumps the version, builds a package
+# version (beta = --skip-validation, release = --code-coverage), optionally
+# promotes it, and optionally installs it into the target org. The package
+# name is read from config/project.config.json (packageName), never hardcoded.
+# Called by per-environment deploy-*.yml wrappers when deployMode == package.
+#
+# Required secrets (per calling environment):
+#   DEVHUB_AUTH_URL — sfdx auth URL for the Dev Hub
+#   ORG_AUTH_URL    — sfdx auth URL for the target org (install only)
+
+name: Salesforce Deploy (package)
+
+on:
+    workflow_call:
+        inputs:
+            org_name:
+                required: true
+                type: string
+                description: Display name (e.g., QA, PROD)
+            org_alias:
+                required: true
+                type: string
+                description: Salesforce CLI alias to assign the target org
+            environment:
+                required: true
+                type: string
+                description: GitHub Environment for secret scoping
+            build:
+                required: false
+                type: string
+                default: 'beta'
+                description: 'beta (skip-validation) or release (code-coverage)'
+            promote:
+                required: false
+                type: boolean
+                default: false
+                description: Promote the built version (release flow)
+            install:
+                required: false
+                type: boolean
+                default: true
+                description: Install the built version into the target org
+        outputs:
+            version:
+                value: ${{ jobs.package.outputs.version }}
+            package_version:
+                value: ${{ jobs.package.outputs.package_version }}
+
+jobs:
+    package:
+        name: ${{ inputs.build == 'release' && 'Release' || 'Beta' }} → ${{ inputs.org_name }}
+        runs-on: ubuntu-latest
+        environment: ${{ inputs.environment }}
+        concurrency:
+            group: sf-package-build
+            cancel-in-progress: false
+        outputs:
+            version: ${{ steps.bump.outputs.version }}
+            package_version: ${{ steps.build.outputs.package_version }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+                  submodules: recursive
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v5
+              with:
+                  node-version: '24'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Install Salesforce CLI
+              run: npm install --global @salesforce/cli
+
+            - name: Resolve package name
+              id: cfg
+              run: |
+                  PKG=$(node scripts/node/config.js packageName)
+                  if [ -z "$PKG" ] || [ "$PKG" = "PROJECT_NAME" ]; then
+                      echo "::error::packageName is not set in config/project.config.json"
+                      exit 1
+                  fi
+                  echo "package_name=$PKG" >> "$GITHUB_OUTPUT"
+                  echo "Package: $PKG"
+
+            - name: Authenticate to DevHub
+              env:
+                  DEVHUB_AUTH_URL: ${{ secrets.DEVHUB_AUTH_URL }}
+              run: |
+                  if [ -z "$DEVHUB_AUTH_URL" ]; then
+                      echo "::error::DEVHUB_AUTH_URL secret is not set — package mode requires a Dev Hub."
+                      exit 1
+                  fi
+                  printf '%s' "$DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
+                  sf org login sfdx-url --sfdx-url-file /tmp/devhub-auth.txt --alias devhub --set-default-dev-hub
+                  rm -f /tmp/devhub-auth.txt
+
+            - name: Authenticate to target org
+              if: inputs.install
+              env:
+                  ORG_AUTH_URL: ${{ secrets.ORG_AUTH_URL }}
+                  ORG_ALIAS: ${{ inputs.org_alias }}
+              run: |
+                  if [ -z "$ORG_AUTH_URL" ]; then
+                      echo "::error::ORG_AUTH_URL secret is not set for environment ${{ inputs.environment }}."
+                      exit 1
+                  fi
+                  printf '%s' "$ORG_AUTH_URL" > /tmp/org-auth.txt
+                  sf org login sfdx-url --sfdx-url-file /tmp/org-auth.txt --alias "$ORG_ALIAS"
+                  rm -f /tmp/org-auth.txt
+
+            - name: Configure git
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            - name: Bump version
+              id: bump
+              run: |
+                  if [ "${{ inputs.build }}" = "release" ]; then
+                      VERSION=$(node scripts/node/bump.js minor)
+                  else
+                      VERSION=$(node scripts/node/bump.js patch)
+                  fi
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                  echo "Bumped to $VERSION"
+
+            - name: Build package version
+              id: build
+              env:
+                  PKG: ${{ steps.cfg.outputs.package_name }}
+              run: |
+                  if [ "${{ inputs.build }}" = "release" ]; then
+                      COV_FLAG="--code-coverage"
+                  else
+                      COV_FLAG="--skip-validation"
+                  fi
+                  BUILD_OUTPUT=$(sf package version create --package "$PKG" $COV_FLAG --installation-key-bypass --wait 120 --json) || true
+                  STATUS=$(echo "$BUILD_OUTPUT" | jq -r '.status // 1')
+                  if [ "$STATUS" != "0" ]; then
+                      echo "::error::Package build failed"
+                      echo "$BUILD_OUTPUT" | jq -r '.message // .result.Error // empty'
+                      exit 1
+                  fi
+                  PACKAGE_VERSION=$(echo "$BUILD_OUTPUT" | jq -r '.result.SubscriberPackageVersionId')
+                  if [ -z "$PACKAGE_VERSION" ] || [ "$PACKAGE_VERSION" = "null" ]; then
+                      echo "::error::No SubscriberPackageVersionId in build output"
+                      echo "$BUILD_OUTPUT" | jq .
+                      exit 1
+                  fi
+                  echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+                  echo "Built: $PACKAGE_VERSION"
+
+            - name: Promote package version
+              if: inputs.promote
+              env:
+                  PACKAGE_VERSION: ${{ steps.build.outputs.package_version }}
+              run: sf package version promote --package "$PACKAGE_VERSION" --no-prompt
+
+            - name: Install to ${{ inputs.org_name }}
+              if: inputs.install
+              env:
+                  PACKAGE_VERSION: ${{ steps.build.outputs.package_version }}
+                  ORG_ALIAS: ${{ inputs.org_alias }}
+              run: |
+                  sf package install --package "$PACKAGE_VERSION" --target-org "$ORG_ALIAS" \
+                      --wait 120 --publish-wait 120 --no-prompt
+
+            - name: Commit version files
+              env:
+                  VERSION: ${{ steps.bump.outputs.version }}
+                  RELEASE: ${{ inputs.build == 'release' }}
+              run: |
+                  git add sfdx-project.json package.json
+                  if git diff --cached --quiet; then
+                      echo "No version changes to commit"
+                      exit 0
+                  fi
+                  git diff --cached --stat
+                  if [ "$RELEASE" = "true" ]; then
+                      git commit -m "chore: release package version ${VERSION} [skip ci]"
+                      git tag -a "v${VERSION}" -m "Release v${VERSION}"
+                      git push --follow-tags
+                  else
+                      git commit -m "chore: ${{ inputs.org_name }} build v${VERSION} (beta) [skip ci]"
+                      git push
+                  fi
