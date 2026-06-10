@@ -1,0 +1,13 @@
+{
+    "githubOrg": "",
+    "projectName": "PROJECT_NAME",
+    "aliasPrefix": "PROJECT_NAME",
+    "pipeline": ["dev", "qa", "uat", "main"],
+    "packageName": "PROJECT_NAME",
+    "namespace": "",
+    "devHub": "",
+    "slackChannel": "",
+    "deployMode": "source",
+    "aerNamespace": "",
+    "aerSkip": []
+}
