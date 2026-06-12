@@ -261,6 +261,10 @@ jobs:
 
             - name: Export SFDMU data
               run: |
+                  if [ ! -f config/export.json ]; then
+                      echo "No config/export.json — skipping data export (configure sf-data-manager to enable)."
+                      exit 0
+                  fi
                   npm run data -- export -s "$ORG_ALIAS" --verbose
 
             # ── Persist & Commit ───────────────────────────────────────────

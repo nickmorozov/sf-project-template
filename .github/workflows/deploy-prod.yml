@@ -110,6 +110,7 @@ jobs:
         needs: [config, admin-guard, deploy-source, deploy-package]
         if: >-
             always() && !cancelled() &&
+            needs.deploy-source.outputs.skip_notify != 'true' &&
             (needs.admin-guard.result == 'failure' ||
              needs.deploy-source.result != 'skipped' ||
              needs.deploy-package.result != 'skipped')

@@ -215,6 +215,12 @@ jobs:
                       exit 0
                   fi
 
+                  if [ ! -f config/import.json ]; then
+                      echo "should_import=false" >> "$GITHUB_OUTPUT"
+                      echo "No config/import.json — skipping data import (configure sf-data-manager to enable)."
+                      exit 0
+                  fi
+
                   DATA_DIR=$(node -e "process.stdout.write(require('./config/import.json')._dataDir)")
                   if git diff --name-only HEAD~1..HEAD -- "$DATA_DIR/" config/import.json | grep -q .; then
                       echo "should_import=true" >> "$GITHUB_OUTPUT"

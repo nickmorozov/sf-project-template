@@ -32,7 +32,7 @@
         "test:lwc:watch": "npm run test:lwc -- --watch",
         "test:lwc:debug": "npm run test:lwc -- --debug",
         "test:lwc:coverage": "npm run test:lwc -- --coverage",
-        "package:list:": "dotenv -- sf package version list",
+        "package:list": "dotenv -- sf package version list",
         "package:list:all": "dotenv -- sf package version list --verbose",
         "package:build": "dotenv -- sf package version create --package $npm_package_config_package_name --code-coverage --installation-key-bypass --wait $npm_package_config_wait 2>&1 | grep -vE \"$npm_package_config_hide_warnings\" && git add sfdx-project.json && git commit -m 'chore: release package version' && git tag -a \"v$npm_package_version\" -m \"Release v$npm_package_version\" && git push --follow-tags",
         "package:build:beta": "dotenv -- sf package version create --package $npm_package_config_package_name --skip-validation --installation-key-bypass --wait $npm_package_config_wait 2>&1 | grep -vE \"$npm_package_config_hide_warnings\" && git add sfdx-project.json && git commit -m 'chore: release package version (beta)'",
