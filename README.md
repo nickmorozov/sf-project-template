@@ -1,51 +1,25 @@
 # PROJECT_NAME
 
-## Quick Start
+Salesforce DX org-pipeline project, scaffolded from [`sf-project-template`](https://github.com/nickmorozov/sf-project-template).
+
+## Quick start
 
 ```bash
-# After creating from template:
-./init.zsh <org-url-or-name>
-
-# Examples:
-./init.zsh acme                                         # production
-./init.zsh https://acme--dev.sandbox.my.salesforce.com  # sandbox
-./init.zsh acme--dev                                    # sandbox shorthand
+gh repo create <org>/<name> --template <org>/sf-project-template --private --clone
+cd <name>
+./init.zsh <org-url-or-alias>     # substitutes PROJECT_NAME, inits .template, syncs, installs, auths
 ```
 
-The init script will:
-1. Replace `PROJECT_NAME` placeholders with your project name
-2. Initialize the `.template/` submodule (and nested `sf-data-manager`)
-3. Sync configs (ESLint, Prettier, Stylelint, Husky, Jest, etc.)
-4. Install dependencies
-5. Authenticate your Salesforce org
+Then in `config/project.config.json` set `githubOrg`, `deployMode` (`source` or `package`), and `slackChannel`, and configure CI secrets (see `docs/README-CI.md`).
 
-## Development
+## Layout
 
-```bash
-npm run source:push              # Deploy to default org
-npm run source:pull              # Retrieve from default org
-npm run source:validate          # Dry-run deployment
-npm run source:diff              # Preview pending changes
-npm run lint                     # ESLint on Aura + LWC JS
-npm run lint:slds                # SLDS linter
-npm run prettier                 # Format src/ files
-npm run test:unit                # LWC Jest tests
-npm run test:unit:coverage       # With coverage
-```
+| Path | Purpose |
+| --- | --- |
+| `src/main/default/` | SFDX-format metadata |
+| `.template/` | shared tooling submodule (`sf-template`) |
+| `.github/workflows/` | CI pipeline (validate-pr, deploy-*, backups, claude) |
+| `config/` | `project.config.json` contract, scratch def, CI registries |
+| `docs/` | `README-CI.md`, `SCRIPTS.md`, `MANUAL.md`, `adr/` |
 
-## Data Management
-
-Export and import Salesforce data via [sf-data-manager](https://github.com/nickmorozov/sf-data-manager) (SFDMU wrapper). Configure objects in `config/<name>.yaml`.
-
-```bash
-npm run data:export              # Export from SOURCE_ALIAS (default: org-dev)
-npm run data:import              # Import to TARGET_ALIAS (default: org-dev)
-npm run data:import:sim          # Simulate import (dry-run)
-```
-
-## Ongoing Updates
-
-```bash
-npm run sync:update              # Pull latest template + apply configs
-npm run sync:preview             # Preview changes without applying
-```
+See `CLAUDE.md` and `docs/` for details.
