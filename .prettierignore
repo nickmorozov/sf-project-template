@@ -1,0 +1,43 @@
+# Salesforce cache and local config
+.sf/
+.sfdx/
+.localdevserver/
+deploy-options.json
+
+# LWC autocomplete
+**/lwc/jsconfig.json
+
+# Coverage reports
+coverage/
+
+# Logs
+*.log
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# ESLint cache
+.eslintcache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Git hooks (shell scripts)
+.husky/
+
+# Salesforce metadata that should not be formatted
+**/staticresources/**
+**/digitalExperiences/**
+**/experiences/**
+**/wave/**
+**/waveTemplates/**
+
+# Shell scripts and CI
+**/*.sh
+.github/
