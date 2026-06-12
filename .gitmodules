@@ -1,4 +1,4 @@
 [submodule ".template"]
 	path = .template
 	url = https://github.com/nickmorozov/sf-template
-	branch = main
+	branch = feature/template-system-v2-spec
