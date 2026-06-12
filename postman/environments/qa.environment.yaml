@@ -1,0 +1,17 @@
+name: QA
+values:
+    - key: consumerkey
+      value: ''
+    - key: consumersecret
+      value: ''
+    - key: SF username
+      value: ''
+    - key: SF Password
+      value: ''
+    - key: Token URL
+      value: ''
+    - key: Service URL
+      value: ''
+    - key: token
+      value: ''
+color: 0

@@ -1,0 +1,13 @@
+# Postman directory-format sync manifest. Fill in IDs after creating the
+# workspace/collection/environments in Postman, or via the Postman VS Code
+# extension's "Push to Postman".
+workspace:
+    id: ''
+
+cloudResources:
+    collections: {}
+    environments:
+        ../postman/environments/dev.environment.yaml: ''
+        ../postman/environments/qa.environment.yaml: ''
+        ../postman/environments/uat.environment.yaml: ''
+        ../postman/environments/prod.environment.yaml: ''
