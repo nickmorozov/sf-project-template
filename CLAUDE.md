@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Salesforce DX project for **PROJECT_NAME**. Uses source format (API v62.0) with shared tooling from the `.template/` git submodule ([sf-template](https://github.com/nickmorozov/sf-template)).
+Salesforce DX project for **PROJECT_NAME**. Uses source format (API v62.0) with shared tooling from the `.template/` git submodule ([sf-template](https://github.com/enum-dot-dev/sf-template)).
 
 This repo is a **project template**. New projects are created by cloning this repo and running `./init.zsh <org-url-or-name>`, which replaces `PROJECT_NAME` placeholders, initializes the submodule, syncs configs, and authenticates the org.
 

@@ -1,4 +1,4 @@
 [submodule ".template"]
 	path = .template
-	url = https://github.com/nickmorozov/sf-template
+	url = https://github.com/enum-dot-dev/sf-template
 	branch = main
