@@ -35,7 +35,7 @@ npm run test:unit:coverage       # With coverage
 
 ## Data Management
 
-Export and import Salesforce data via [sf-data-manager](https://github.com/nickmorozov/sf-data-manager) (SFDMU wrapper). Configure objects in `config/<name>.yaml`.
+Export and import Salesforce data via [sf-data-manager](https://github.com/enum-dot-dev/sf-data-manager) (SFDMU wrapper). Configure objects in `config/<name>.yaml`.
 
 ```bash
 npm run data:export              # Export from SOURCE_ALIAS (default: org-dev)
